@@ -1,4 +1,21 @@
 from pathlib import Path
+from google import genai
+from google.genai import types
+
+schema_get_file_content = types.FunctionDeclaration(
+    name="get_file_content",
+    description="Retrieves the content of a specific file in the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The path to the file to retrieve content from, relative to the working directory.",
+            ),
+        },
+    ),
+)
+
 
 def get_file_content(working_directory, file_path):
     working_dir_path = Path.cwd() / working_directory
@@ -20,5 +37,3 @@ def get_file_content(working_directory, file_path):
     except Exception as e:
         return f'Error reading the file: {str(e)}'
     
-
-print(get_file_content("calculator", "lorem.txt"))

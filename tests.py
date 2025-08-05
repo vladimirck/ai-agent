@@ -4,64 +4,48 @@ import unittest
 from functions.get_files_info import get_files_info
 from functions.get_file_content import get_file_content
 from functions.write_file import write_file
+from functions.run_python_file import run_python_file
 
 
 class TestGetFilesInfo(unittest.TestCase):
 
-    def test_calculator_dot(self):
-        result = get_files_info("calculator", ".")
+    def test_write_file(self):
+        result = write_file("calculator", "lorem.txt", "wait, this isn't lorem ipsum")
         print(result)
-        self.assertIn("- main.py:", result)
-        self.assertIn("- tests.py:", result)
-        self.assertIn("- tests.py:", result)
-        self.assertIn("- pkg:", result)
+        self.assertEqual(f'Successfully wrote to "lorem.txt" ({len("wait, this isn\'t lorem ipsum")} characters written)', result)
 
-    def test_calculator_pkg(self):
-        result = get_files_info("calculator", "pkg")
+    def test_write_file_outside(self):
+        result = write_file("calculator", "/tmp/temp.txt", "this should not be allowed")
         print(result)
-        self.assertIn("- calculator.py:", result)
-        self.assertIn("- render.py:", result)
-        self.assertIn("- __pycache__:", result)
+        self.assertEqual('Error: Cannot write to "/tmp/temp.txt" as it is outside the permitted working directory', result)
 
-    def test_error_bin(self):
-        result = get_files_info("calculator", "/bin")
+    def test_write_file_morelorem(self):
+        result = write_file("calculator", "pkg/morelorem.txt", "lorem ipsum dolor sit amet")
         print(result)
-        self.assertEqual('Error: Cannot list "/bin" as it is outside the permitted working directory', result)
-
-    def test_error_dotdot(self):
-        result = get_files_info("calculator", "../")
-        print(result)
-        self.assertEqual('Error: Cannot list "../" as it is outside the permitted working directory', result)
-
-    def test_truncated(self):
-        result = get_file_content("calculator", "lorem.txt")
-        print(result)
-        self.assertIn('[...File "lorem.txt" truncated at 10000 characters]', result)
+        self.assertEqual(f'Successfully wrote to "pkg/morelorem.txt" ({len("lorem ipsum dolor sit amet")} characters written)', result)
     
-    def test_error_outside(self):
-        result = get_file_content("calculator", "/bin/cat")
+    def test_run_python_file(self):
+        result = run_python_file("calculator", "main.py")
         print(result)
-        self.assertEqual('Error: Cannot read "/bin/cat" as it is outside the permitted working directory', result)
-
-    def test_error_not_file(self):
-        result = get_file_content("calculator", "pkg")
+        self.assertTrue(result.startswith("STDOUT: ") or result.startswith("Process exited with code"))
+        result = run_python_file("calculator", "tests.py")
         print(result)
-        self.assertEqual('Error: File not found or is not a regular file: "pkg"', result)
+        self.assertTrue(result.startswith("STDOUT: ") or result.startswith("Process exited with code"))
 
-    def test_does_not_exist(self):
-        result = get_file_content("calculator", "pkg/does_not_exist.py")
+    def test_run_python_file_with_args(self):
+        result = run_python_file("calculator", "main.py", ["3 + 5"])
         print(result)
-        self.assertEqual('Error: File not found or is not a regular file: "pkg/does_not_exist.py"', result)
+        self.assertTrue(result.startswith("STDOUT: ") or result.startswith("Process exited with code"))
 
-    def test_file_exists(self):
-        result_main = get_file_content("calculator", "main.py")
-        result_pkg_calc = get_file_content("calculator", "pkg/calculator.py")
-        print(result_main)
-        self.assertIn('def main():', result_main)
-        print(result_pkg_calc)
-        self.assertIn('def _apply_operator(self, operators, values):', result_pkg_calc)
+    def test_run_python_file_outside(self):
+        result = run_python_file("calculator", "../main.py")
+        print(result)
+        self.assertEqual('Error: Cannot execute "../main.py" as it is outside the permitted working directory', result)
 
-    
+    def test_run_python_file_not_found(self):
+        result = run_python_file("calculator", "nonexistent.py")
+        print(result)
+        self.assertEqual(f'Error: File "nonexistent.py" not found.', result)
 
 if __name__ == "__main__":
     unittest.main()
